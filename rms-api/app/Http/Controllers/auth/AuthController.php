@@ -4,16 +4,19 @@ namespace App\Http\Controllers\auth;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Jobs\VerifyUserJobs;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Validator;
 use App\Models\User;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth:api', ['except' => ['login','register']]);
+        $this->middleware('auth:api', ['except' => ['login','register','accountVerify','forgotPassword','updatePassword']]);
     }
 
     public function login(Request $request)
@@ -61,7 +64,15 @@ class AuthController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'slug'=>Str::random(15),
+            'token'=>Str::random(20),
+            'status'=>'active',
         ]);
+
+        if ($user){
+            $details = ['name'=>$user->name, 'email'=>$user->email,'hashEmail'=>Crypt::encryptString($user->email),'token'=>$user->token];
+            dispatch(new VerifyUserJobs($user));
+        }
 
         $token = Auth::login($user);
         return response()->json([
