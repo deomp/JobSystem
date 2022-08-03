@@ -11,9 +11,12 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Validator;
 use App\Models\User;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\Response;
+use App\Traits\ApiResponseWithHttpSTatus;
 
 class AuthController extends Controller
 {
+    use ApiResponseWithHttpSTatus;
     public function __construct()
     {
         $this->middleware('auth:api', ['except' => ['login','register','accountVerify','forgotPassword','updatePassword']]);
@@ -86,13 +89,10 @@ class AuthController extends Controller
         ]);
     }
 
-    public function logout()
-    {
+
+    public function logout() {
         Auth::logout();
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Successfully logged out',
-        ]);
+        return $this->apiResponse('Successfully logged out',null,Response::HTTP_OK,true);
     }
 
     public function refresh()
@@ -108,6 +108,6 @@ class AuthController extends Controller
     }
 
     public function userProfile(){
-        return response()->json(auth()->user());
+        return $this->apiResponse('UserProfile',$data=Auth::user(),Response::HTTP_OK,true);
         }
 }
